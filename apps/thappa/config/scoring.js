@@ -22,7 +22,7 @@ module.exports = {
   ],
   // Auto-block threshold
   BLOCK_THRESHOLD: 100,
-  // Under-review trigger
+  // Under-review trigger: flag when person has 2+ defaults AND 2+ bad ratings
   REVIEW_MIN_DEFAULTS: 2,
-  REVIEW_MIN_BAD_RATINGS: 3,
+  REVIEW_MIN_BAD_RATINGS: 2,
 };

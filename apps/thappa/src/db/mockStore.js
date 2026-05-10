@@ -7,12 +7,19 @@
 const logger = require('../utils/logger');
 
 // ─── In-memory tables (pre-seeded with demo data) ────────────────────────────
+// Scores are pre-calculated using the algorithm:
+//   BASE=500, PAID=+50, NOT_PAID=-100, PARTIAL=-30, GOOD=+20, BAD=-50
+// P001: 500 + 3×50 + 2×20 = 690  (3 PAID, 2 GOOD, 1 NEUTRAL)
+// P002: 500 + 1×50 + 1×(-30) + 1×20 = 540  (1 PAID, 1 PARTIAL, 1 GOOD, 1 NEUTRAL)
+// P003: 500 + 1×50 + 1×(-100) + 1×(-50) = 400  (1 PAID, 1 NOT_PAID, 1 BAD, 1 NEUTRAL)
+// P004: 500 + 2×(-100) + 2×(-50) = 200  (2 NOT_PAID, 2 BAD)
+// P005: 500 + 2×50 + 2×20 = 640  (2 PAID, 2 GOOD)
 let people = [
-  { id: 'P001', name: 'RAJESH KUMAR',   phoneLast4: '9823', location: 'Delhi',   userType: 'Worker',      score: 820, status: 'Active',       createdAt: '2026-01-10T08:00:00.000Z', updatedAt: '2026-05-01T10:00:00.000Z' },
-  { id: 'P002', name: 'RANI DEVI',      phoneLast4: '9876', location: 'Mumbai',  userType: 'Shopkeeper',  score: 650, status: 'Active',       createdAt: '2026-01-15T09:00:00.000Z', updatedAt: '2026-04-20T11:00:00.000Z' },
-  { id: 'P003', name: 'SURESH SHARMA',  phoneLast4: '4512', location: 'Jaipur',  userType: 'Employer',    score: 430, status: 'Active',       createdAt: '2026-02-01T07:00:00.000Z', updatedAt: '2026-04-15T09:00:00.000Z' },
-  { id: 'P004', name: 'MEENA PATEL',    phoneLast4: '7731', location: 'Surat',   userType: 'Worker',      score: 210, status: 'Under Review', createdAt: '2026-02-10T10:00:00.000Z', updatedAt: '2026-05-05T08:00:00.000Z' },
-  { id: 'P005', name: 'AMIT SINGH',     phoneLast4: '3390', location: 'Lucknow', userType: 'Worker',      score: 760, status: 'Active',       createdAt: '2026-03-01T08:00:00.000Z', updatedAt: '2026-05-08T12:00:00.000Z' },
+  { id: 'P001', name: 'RAJESH KUMAR',   phoneLast4: '9823', location: 'Delhi',   userType: 'Worker',      score: 690, status: 'Active',       createdAt: '2026-01-10T08:00:00.000Z', updatedAt: '2026-05-01T10:00:00.000Z' },
+  { id: 'P002', name: 'RANI DEVI',      phoneLast4: '9876', location: 'Mumbai',  userType: 'Shopkeeper',  score: 540, status: 'Active',       createdAt: '2026-01-15T09:00:00.000Z', updatedAt: '2026-04-20T11:00:00.000Z' },
+  { id: 'P003', name: 'SURESH SHARMA',  phoneLast4: '4512', location: 'Jaipur',  userType: 'Employer',    score: 400, status: 'Active',       createdAt: '2026-02-01T07:00:00.000Z', updatedAt: '2026-04-15T09:00:00.000Z' },
+  { id: 'P004', name: 'MEENA PATEL',    phoneLast4: '7731', location: 'Surat',   userType: 'Worker',      score: 200, status: 'Under Review', createdAt: '2026-02-10T10:00:00.000Z', updatedAt: '2026-05-05T08:00:00.000Z' },
+  { id: 'P005', name: 'AMIT SINGH',     phoneLast4: '3390', location: 'Lucknow', userType: 'Worker',      score: 640, status: 'Active',       createdAt: '2026-03-01T08:00:00.000Z', updatedAt: '2026-05-08T12:00:00.000Z' },
 ];
 
 let transactions = [
@@ -30,11 +37,11 @@ let transactions = [
 ];
 
 let scores = [
-  { personId: 'P001', totalTxn: 3, paid: 3, defaults: 0, partial: 0, goodRatings: 2, badRatings: 0, compositeScore: 820, lastUpdated: '2026-05-01T10:00:00.000Z' },
-  { personId: 'P002', totalTxn: 2, paid: 1, defaults: 0, partial: 1, goodRatings: 1, badRatings: 0, compositeScore: 650, lastUpdated: '2026-04-25T14:00:00.000Z' },
-  { personId: 'P003', totalTxn: 2, paid: 1, defaults: 1, partial: 0, goodRatings: 0, badRatings: 1, compositeScore: 430, lastUpdated: '2026-04-05T09:00:00.000Z' },
-  { personId: 'P004', totalTxn: 2, paid: 0, defaults: 2, partial: 0, goodRatings: 0, badRatings: 2, compositeScore: 210, lastUpdated: '2026-04-01T10:00:00.000Z' },
-  { personId: 'P005', totalTxn: 2, paid: 2, defaults: 0, partial: 0, goodRatings: 2, badRatings: 0, compositeScore: 760, lastUpdated: '2026-05-05T10:00:00.000Z' },
+  { personId: 'P001', totalTxn: 3, paid: 3, defaults: 0, partial: 0, goodRatings: 2, badRatings: 0, compositeScore: 690, lastUpdated: '2026-05-01T10:00:00.000Z' },
+  { personId: 'P002', totalTxn: 2, paid: 1, defaults: 0, partial: 1, goodRatings: 1, badRatings: 0, compositeScore: 540, lastUpdated: '2026-04-25T14:00:00.000Z' },
+  { personId: 'P003', totalTxn: 2, paid: 1, defaults: 1, partial: 0, goodRatings: 0, badRatings: 1, compositeScore: 400, lastUpdated: '2026-04-05T09:00:00.000Z' },
+  { personId: 'P004', totalTxn: 2, paid: 0, defaults: 2, partial: 0, goodRatings: 0, badRatings: 2, compositeScore: 200, lastUpdated: '2026-04-01T10:00:00.000Z' },
+  { personId: 'P005', totalTxn: 2, paid: 2, defaults: 0, partial: 0, goodRatings: 2, badRatings: 0, compositeScore: 640, lastUpdated: '2026-05-05T10:00:00.000Z' },
 ];
 
 // ─── ID generators ────────────────────────────────────────────────────────────
