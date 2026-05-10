@@ -51,7 +51,6 @@ app.use('/api', apiRoutes);
 
 // ─── Health Check (both /health and /api/health) ──────────────────────────────
 function healthResponse(req, res) {
-  const db = require('./db/sheets');
   const usingMock = !process.env.GOOGLE_SERVICE_ACCOUNT_JSON || !process.env.GOOGLE_SPREADSHEET_ID;
   res.json({
     status: 'ok',
