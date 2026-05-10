@@ -268,4 +268,11 @@ async function executeReport(text, senderPhone) {
   }
 }
 
-module.exports = { executeReport, parseReportCommand };
+/**
+ * Check if a user has an active multi-step REPORT session
+ */
+function hasActiveSession(phone) {
+  return getSession(phone) !== null;
+}
+
+module.exports = { executeReport, parseReportCommand, hasActiveSession };

@@ -6,7 +6,7 @@
  */
 
 const { executeCheck } = require('../commands/check');
-const { executeReport } = require('../commands/report');
+const { executeReport, hasActiveSession } = require('../commands/report');
 const { executeHelp } = require('../commands/help');
 const logger = require('./logger');
 
@@ -169,16 +169,11 @@ Reply CHECK [Name] [Last 4] to start verifying.`;
 
     case 'UNKNOWN':
     default:
-      // Check if user is in a REPORT session
-      const { executeReport: reportHandler } = require('../commands/report');
-      // Try to continue a guided report session
-      try {
-        const { sessions } = require('../commands/report');
-        // If no session, return unknown
-        return handleUnknown();
-      } catch {
-        return handleUnknown();
+      // Continue a guided REPORT session if one is active for this user
+      if (hasActiveSession(from)) {
+        return await executeReport(text, from);
       }
+      return handleUnknown();
   }
 }
 

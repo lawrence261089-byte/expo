@@ -117,6 +117,8 @@ router.get('/scores', async (req, res, next) => {
 // ─── POST /api/scores/recalculate/:personId ───────────────────────────────────
 router.post('/scores/recalculate/:personId', async (req, res, next) => {
   try {
+    const personResult = await db.findPersonById(req.params.personId);
+    if (!personResult) return res.status(404).json({ error: 'Person not found' });
     const result = await recalculateScore(req.params.personId);
     res.json(result);
   } catch (err) { next(err); }
