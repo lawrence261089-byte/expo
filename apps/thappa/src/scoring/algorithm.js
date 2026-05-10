@@ -18,24 +18,20 @@
 
 const db = require('../db/sheets');
 const logger = require('../utils/logger');
+const scoringConfig = require('../../config/scoring');
 
-// ─── Score Weights ────────────────────────────────────────────────────────────
+// ─── Score Weights (from centralized config) ──────────────────────────────────
 const WEIGHTS = {
-  BASE: 500,
-  PAID: +50,
-  DEFAULT: -100,
-  PARTIAL: -30,
-  GOOD_RATING: +20,
-  BAD_RATING: -50,
+  BASE: scoringConfig.BASE_SCORE,
+  PAID: scoringConfig.WEIGHTS.PAID,
+  DEFAULT: scoringConfig.WEIGHTS.DEFAULT,
+  PARTIAL: scoringConfig.WEIGHTS.PARTIAL,
+  GOOD_RATING: scoringConfig.WEIGHTS.GOOD_RATING,
+  BAD_RATING: scoringConfig.WEIGHTS.BAD_RATING,
 };
 
-// ─── Risk Bands ───────────────────────────────────────────────────────────────
-const RISK_BANDS = [
-  { min: 800, max: 1000, label: 'EXCELLENT', emoji: '🌟', recommendation: 'TRUST', risk: 'VERY LOW' },
-  { min: 600, max: 799,  label: 'GOOD',      emoji: '✅', recommendation: 'TRUST', risk: 'LOW' },
-  { min: 300, max: 599,  label: 'MODERATE',  emoji: '⚡', recommendation: 'CAUTION', risk: 'MODERATE' },
-  { min: 0,   max: 299,  label: 'RISKY',     emoji: '⚠️', recommendation: 'NO CREDIT', risk: 'HIGH' },
-];
+// ─── Risk Bands (from centralized config) ─────────────────────────────────────
+const RISK_BANDS = scoringConfig.RISK_BANDS;
 
 function getRiskBand(score) {
   return RISK_BANDS.find(b => score >= b.min && score <= b.max) || RISK_BANDS[3];
@@ -85,10 +81,10 @@ async function recalculateScore(personId) {
   const personResult = await db.findPersonById(personId);
   const oldScore = personResult ? personResult.person.score : 500;
 
-  // Determine status based on score
+  // Determine status based on score (using centralized config thresholds)
   let status = 'Active';
-  if (scoreData.compositeScore < 100) status = 'Blocked';
-  else if (scoreData.badRatings >= 3 && scoreData.defaults >= 2) status = 'Under Review';
+  if (scoreData.compositeScore < scoringConfig.BLOCK_THRESHOLD) status = 'Blocked';
+  else if (scoreData.badRatings >= scoringConfig.REVIEW_MIN_BAD_RATINGS && scoreData.defaults >= scoringConfig.REVIEW_MIN_DEFAULTS) status = 'Under Review';
 
   // Persist
   await db.upsertScoreRecord(personId, scoreData);

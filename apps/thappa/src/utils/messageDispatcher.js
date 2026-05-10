@@ -158,7 +158,11 @@ PAID [UTR number]
         return `Please include your UTR number.\nExample: PAID 123456789012`;
       }
       logger.info(`Payment claim from ${from}: UTR ${utr}`);
-      // TODO: Verify UTR via payment gateway API
+      // Activate subscription for this user (pending real UTR verification)
+      const quota = getUserQuota(from);
+      quota.subscribed = true;
+      userQuotas.set(from, quota);
+      // TODO: Verify UTR via payment gateway API before activating in production
       return `✅ Payment received! (UTR: ${utr})
 
 Your account has been activated.
@@ -169,16 +173,7 @@ Reply CHECK [Name] [Last 4] to start verifying.`;
 
     case 'UNKNOWN':
     default:
-      // Check if user is in a REPORT session
-      const { executeReport: reportHandler } = require('../commands/report');
-      // Try to continue a guided report session
-      try {
-        const { sessions } = require('../commands/report');
-        // If no session, return unknown
-        return handleUnknown();
-      } catch {
-        return handleUnknown();
-      }
+      return handleUnknown();
   }
 }
 
