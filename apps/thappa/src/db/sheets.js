@@ -4,21 +4,24 @@
  *   - People   (master directory)
  *   - Transactions (interaction log)
  *   - Scores   (running calculations)
+ *
+ * Falls back to an in-memory mock store when Google credentials are not set.
  */
+
+// ─── Fallback to mock store when credentials are absent ──────────────────────
+const _hasCreds = !!(process.env.GOOGLE_SERVICE_ACCOUNT_JSON && process.env.GOOGLE_SPREADSHEET_ID);
+if (!_hasCreds) {
+  const _logger = require('../utils/logger');
+  _logger.warn('Google Sheets credentials not configured – using in-memory mock store.');
+  module.exports = require('./mockStore');
+} else {
 
 const { google } = require('googleapis');
 const logger = require('../utils/logger');
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 function getAuth() {
-  const credentials = process.env.GOOGLE_SERVICE_ACCOUNT_JSON
-    ? JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON)
-    : null;
-
-  if (!credentials) {
-    throw new Error('GOOGLE_SERVICE_ACCOUNT_JSON environment variable not set');
-  }
-
+  const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
   return new google.auth.GoogleAuth({
     credentials,
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
@@ -382,3 +385,5 @@ module.exports = {
   readSheet,
   SHEETS,
 };
+
+} // end else (Google Sheets credentials present)

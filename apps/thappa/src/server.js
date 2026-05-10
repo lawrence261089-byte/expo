@@ -49,16 +49,21 @@ app.use('/webhook', webhookRoutes);
 app.use('/admin', adminRoutes);
 app.use('/api', apiRoutes);
 
-// ─── Health Check ─────────────────────────────────────────────────────────────
-app.get('/health', (req, res) => {
+// ─── Health Check (both /health and /api/health) ──────────────────────────────
+function healthResponse(req, res) {
+  const db = require('./db/sheets');
+  const usingMock = !process.env.GOOGLE_SERVICE_ACCOUNT_JSON || !process.env.GOOGLE_SPREADSHEET_ID;
   res.json({
     status: 'ok',
     service: 'Thappa Trust Platform',
     version: '1.0.0',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
+    uptime: Math.round(process.uptime()),
+    dataStore: usingMock ? 'in-memory (mock)' : 'Google Sheets',
   });
-});
+}
+app.get('/health', healthResponse);
+app.get('/api/health', healthResponse);
 
 // ─── Root → Admin Dashboard ───────────────────────────────────────────────────
 app.get('/', (req, res) => {
