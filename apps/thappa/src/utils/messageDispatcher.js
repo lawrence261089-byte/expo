@@ -8,6 +8,7 @@
 const { executeCheck } = require('../commands/check');
 const { executeReport } = require('../commands/report');
 const { executeHelp } = require('../commands/help');
+const { executeMyStats } = require('../commands/mystats');
 const logger = require('./logger');
 
 // ─── User subscription/quota tracking (in-memory, replace with DB in prod) ───
@@ -60,6 +61,7 @@ function detectCommand(text) {
   if (upper.startsWith('HELP')) return 'HELP';
   if (upper.startsWith('SUBSCRIBE')) return 'SUBSCRIBE';
   if (upper.startsWith('PAID')) return 'PAYMENT';
+  if (upper === 'MYSTATS' || upper === 'MY STATS' || upper === 'STATS') return 'MYSTATS';
   if (upper === 'HI' || upper === 'HELLO' || upper === 'START') return 'GREETING';
 
   // Check if user is in a REPORT session (any text could be a step response)
@@ -81,6 +83,7 @@ I help you verify payment history before giving credit or hiring.
 
 🔍 CHECK [Name] [Last 4 digits]
 📝 REPORT [Name] [Last 4] [Amount] [Status] [Rating]
+📊 MYSTATS – See your reporting activity
 ❓ HELP
 
 ━━━━━━━━━━━━━━━━━━━━━━
@@ -134,6 +137,9 @@ async function dispatch(messageData) {
 
     case 'HELP':
       return await executeHelp(text, from);
+
+    case 'MYSTATS':
+      return await executeMyStats(from);
 
     case 'SUBSCRIBE':
       return `━━━━━━━━━━━━━━━━━━━━━━

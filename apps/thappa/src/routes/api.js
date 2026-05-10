@@ -8,6 +8,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db/sheets');
 const { recalculateScore, getRiskBand } = require('../scoring/algorithm');
+const { dispatch } = require('../utils/messageDispatcher');
 const logger = require('../utils/logger');
 
 // ─── Simple API key auth middleware ──────────────────────────────────────────
@@ -150,6 +151,16 @@ router.get('/stats', async (req, res, next) => {
     const moderate = people.filter(r => { const s = parseInt(r[5] || '0', 10); return s >= 300 && s < 600; }).length;
     const risky = people.filter(r => parseInt(r[5] || '0', 10) < 300).length;
 
+    // Recent transactions (last 10) for activity feed
+    const recentTxns = txns
+      .slice()
+      .sort((a, b) => new Date(b[7] || 0) - new Date(a[7] || 0))
+      .slice(0, 10)
+      .map(r => ({
+        id: r[0], personId: r[1], amount: parseFloat(r[3] || '0'),
+        status: r[4], rating: r[5], date: r[7],
+      }));
+
     res.json({
       totalPeople,
       totalTransactions: totalTxns,
@@ -158,8 +169,38 @@ router.get('/stats', async (req, res, next) => {
       paymentRate: totalTxns > 0 ? Math.round((paidTxns / totalTxns) * 100) : 0,
       averageScore: avgScore,
       distribution: { excellent, good, moderate, risky },
+      recentTransactions: recentTxns,
     });
   } catch (err) { next(err); }
+});
+
+// ─── POST /api/simulate ───────────────────────────────────────────────────────
+// Allows the admin dashboard bot simulator to use real server-side command logic
+router.post('/simulate', async (req, res, next) => {
+  try {
+    const { message, phone } = req.body;
+    if (!message) {
+      return res.status(400).json({ error: 'message is required' });
+    }
+
+    // Use a stable demo phone number for the simulator
+    const senderPhone = phone || 'simulator_demo';
+
+    const messageData = {
+      messageId: `sim_${Date.now()}`,
+      from: senderPhone,
+      senderName: 'Simulator',
+      type: 'text',
+      text: message,
+      timestamp: Math.floor(Date.now() / 1000),
+    };
+
+    const reply = await dispatch(messageData);
+    res.json({ reply: reply || 'No response generated.' });
+  } catch (err) {
+    logger.error(`Simulate error: ${err.message}`);
+    next(err);
+  }
 });
 
 module.exports = router;

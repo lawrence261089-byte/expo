@@ -70,6 +70,9 @@ async function loadDashboard() {
     const data = await apiFetch('/stats');
     state.stats = data;
     renderStats(data);
+    if (data.recentTransactions) {
+      renderRecentActivity(data.recentTransactions);
+    }
   } catch (err) {
     console.error('Failed to load stats:', err);
     renderMockStats();
@@ -100,6 +103,30 @@ function renderMockStats() {
   setText('stat-txns', '—');
   setText('stat-avg-score', '—');
   setText('stat-payment-rate', '—');
+}
+
+function renderRecentActivity(txns) {
+  const el = document.getElementById('recentActivityList');
+  if (!el) return;
+
+  if (!txns || txns.length === 0) {
+    el.innerHTML = '<div class="activity-empty">No recent activity</div>';
+    return;
+  }
+
+  el.innerHTML = txns.map(t => {
+    const statusEmoji = t.status === 'PAID' ? '✅' : t.status === 'NOT_PAID' ? '❌' : '⚠️';
+    const statusCls = t.status === 'PAID' ? 'txn-paid' : t.status === 'NOT_PAID' ? 'txn-notpaid' : 'txn-partial';
+    const date = t.date ? new Date(t.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—';
+    return `
+      <div class="activity-item">
+        <div class="activity-icon ${statusCls}">${statusEmoji}</div>
+        <div class="activity-body">
+          <div class="activity-title"><code>${t.personId}</code> — ₹${(t.amount || 0).toLocaleString('en-IN')}</div>
+          <div class="activity-meta">${t.status} · ${date}</div>
+        </div>
+      </div>`;
+  }).join('');
 }
 
 async function loadPeople() {
@@ -233,7 +260,6 @@ async function runQuickCheck() {
   showResult(resultEl, '🔍 Checking...', 'loading');
 
   try {
-    // Simulate the CHECK command via the simulator endpoint
     const res = await fetch('/api/people', {
       headers: { 'x-api-key': API_KEY }
     });
@@ -272,9 +298,111 @@ function showResult(el, text, type) {
     : 'var(--border)';
 }
 
-// ─── Bot Simulator ────────────────────────────────────────────────────────────
-const simulatorSessions = {};
+// ─── Person Detail Modal ──────────────────────────────────────────────────────
+async function viewPerson(id) {
+  const modal = document.getElementById('personDetailModal');
+  const content = document.getElementById('personDetailContent');
+  if (!modal || !content) return;
 
+  content.innerHTML = '<div class="loading-cell" style="padding:40px;text-align:center">Loading...</div>';
+  modal.classList.remove('hidden');
+
+  try {
+    const data = await apiFetch(`/people/${id}`);
+    const { person, scoreData, band, transactions } = data;
+
+    const statusClass = person.status === 'Active' ? 'status-active' : person.status === 'Blocked' ? 'status-blocked' : 'status-review';
+    const scoreBand = getScoreBand(person.score);
+
+    const txnRows = (transactions || []).slice(0, 10).map(t => {
+      const statusEmoji = t.status === 'PAID' ? '✅' : t.status === 'NOT_PAID' ? '❌' : '⚠️';
+      const ratingEmoji = t.rating === 'GOOD' ? '👍' : t.rating === 'BAD' ? '👎' : '👌';
+      const date = t.date ? new Date(t.date).toLocaleDateString('en-IN') : '—';
+      const statusCls = t.status === 'PAID' ? 'txn-paid' : t.status === 'NOT_PAID' ? 'txn-notpaid' : 'txn-partial';
+      return `<tr>
+        <td>₹${(t.amount || 0).toLocaleString('en-IN')}</td>
+        <td class="${statusCls}">${statusEmoji} ${t.status}</td>
+        <td>${ratingEmoji} ${t.rating || '—'}</td>
+        <td>${t.notes || '—'}</td>
+        <td>${date}</td>
+      </tr>`;
+    }).join('');
+
+    const paymentRate = scoreData && scoreData.totalTxn > 0
+      ? Math.round((scoreData.paid / scoreData.totalTxn) * 100)
+      : 0;
+
+    content.innerHTML = `
+      <div class="person-detail-header">
+        <div class="person-detail-avatar">${(person.name || '?')[0]}</div>
+        <div class="person-detail-info">
+          <h2>${person.name}</h2>
+          <div class="person-detail-meta">
+            <span>📱 ****${person.phoneLast4}</span>
+            <span>📍 ${person.location || 'Not set'}</span>
+            <span>🏷️ ${person.userType || 'Worker'}</span>
+          </div>
+          <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+            <span class="score-badge ${scoreBand.cls}">${scoreBand.emoji} ${person.score}/1000</span>
+            <span class="status-badge ${statusClass}">${person.status}</span>
+          </div>
+        </div>
+      </div>
+
+      ${scoreData ? `
+      <div class="person-detail-stats">
+        <div class="pd-stat">
+          <div class="pd-stat-value">${scoreData.totalTxn}</div>
+          <div class="pd-stat-label">Total Txn</div>
+        </div>
+        <div class="pd-stat">
+          <div class="pd-stat-value txn-paid">${scoreData.paid}</div>
+          <div class="pd-stat-label">Paid</div>
+        </div>
+        <div class="pd-stat">
+          <div class="pd-stat-value txn-notpaid">${scoreData.defaults}</div>
+          <div class="pd-stat-label">Defaults</div>
+        </div>
+        <div class="pd-stat">
+          <div class="pd-stat-value txn-partial">${scoreData.partial}</div>
+          <div class="pd-stat-label">Partial</div>
+        </div>
+        <div class="pd-stat">
+          <div class="pd-stat-value" style="color:var(--accent-green)">${paymentRate}%</div>
+          <div class="pd-stat-label">Pay Rate</div>
+        </div>
+        <div class="pd-stat">
+          <div class="pd-stat-value" style="color:var(--accent-green)">${scoreData.goodRatings}</div>
+          <div class="pd-stat-label">👍 Good</div>
+        </div>
+        <div class="pd-stat">
+          <div class="pd-stat-value" style="color:var(--accent-red)">${scoreData.badRatings}</div>
+          <div class="pd-stat-label">👎 Bad</div>
+        </div>
+      </div>` : ''}
+
+      <div class="person-detail-recommendation">
+        <strong>${scoreBand.emoji} ${scoreBand.label}</strong> — ${band?.recommendation || scoreBand.recommendation}
+        <span style="color:var(--text-muted);margin-left:8px">Risk: ${band?.risk || scoreBand.risk}</span>
+      </div>
+
+      ${transactions && transactions.length > 0 ? `
+      <h4 style="margin:16px 0 10px;font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Transaction History</h4>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr><th>Amount</th><th>Status</th><th>Rating</th><th>Notes</th><th>Date</th></tr>
+          </thead>
+          <tbody>${txnRows}</tbody>
+        </table>
+      </div>` : '<div style="color:var(--text-muted);margin-top:16px;text-align:center">No transactions recorded yet.</div>'}
+    `;
+  } catch (err) {
+    content.innerHTML = `<div class="loading-cell" style="padding:40px;text-align:center">⚠️ Could not load person details.</div>`;
+  }
+}
+
+// ─── Bot Simulator ────────────────────────────────────────────────────────────
 async function sendSimMessage(text) {
   if (!text.trim()) return;
 
@@ -290,157 +418,39 @@ async function sendSimMessage(text) {
 
   chatEl.scrollTop = chatEl.scrollHeight;
 
-  // Process command locally (mock responses)
-  const reply = await processSimCommand(text);
+  // Show typing indicator
+  const typingId = `typing_${Date.now()}`;
+  chatEl.innerHTML += `
+    <div class="message bot-message" id="${typingId}">
+      <div class="message-bubble typing-indicator"><span></span><span></span><span></span></div>
+    </div>`;
+  chatEl.scrollTop = chatEl.scrollHeight;
 
-  setTimeout(() => {
-    chatEl.innerHTML += `
-      <div class="message bot-message">
-        <div class="message-bubble">${escapeHtml(reply)}</div>
-        <div class="message-time">${now}</div>
-      </div>`;
-    chatEl.scrollTop = chatEl.scrollHeight;
-  }, 400);
-}
-
-async function processSimCommand(text) {
-  const upper = text.trim().toUpperCase();
-
-  if (upper === 'HI' || upper === 'HELLO' || upper === 'START') {
-    return `🙏 Namaste! Welcome to Thappa – India's Trust Platform.
-
-I help you verify payment history before giving credit or hiring.
-
-📌 Quick Commands:
-🔍 CHECK [Name] [Last 4 digits]
-📝 REPORT [Name] [Last 4] [Amount] [Status] [Rating]
-❓ HELP
-
-Example: CHECK Rajesh Kumar 9823`;
+  // Call real server-side simulate endpoint
+  let reply;
+  try {
+    const res = await fetch('/api/simulate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': API_KEY },
+      body: JSON.stringify({ message: text, phone: 'simulator_demo' }),
+    });
+    const data = await res.json();
+    reply = data.reply || '⚠️ No response.';
+  } catch (err) {
+    reply = `⚠️ Could not reach server. Make sure the server is running.\n\nError: ${err.message}`;
   }
 
-  if (upper.startsWith('HELP')) {
-    const q = text.replace(/^HELP\s*/i, '').trim();
-    if (!q) {
-      return `━━━━━━━━━━━━━━━━━━━━━━
-🏷️ THAPPA HELP
-━━━━━━━━━━━━━━━━━━━━━━
+  // Remove typing indicator and show reply
+  const typingEl = document.getElementById(typingId);
+  if (typingEl) typingEl.remove();
 
-🔍 CHECK [Name] [Last 4]
-   Verify someone's trust score
-
-📝 REPORT [Name] [Last 4] [Amount] [Status] [Rating]
-   Log a transaction
-
-Status options: PAID | NOT_PAID | PARTIAL
-Rating options: GOOD | BAD | NEUTRAL
-
-📊 Score Guide:
-🌟 800–1000 → EXCELLENT
-✅ 600–799  → GOOD
-⚡ 300–599  → MODERATE
-⚠️ 0–299   → RISKY
-━━━━━━━━━━━━━━━━━━━━━━`;
-    }
-    return `✅ Support Request Received\n\nYour query: "${q}"\n\nWe'll reply within 2 hours.\nSupport hours: 9 AM – 9 PM IST`;
-  }
-
-  if (upper.startsWith('CHECK')) {
-    const parts = text.replace(/^CHECK\s+/i, '').trim().split(/\s+/);
-    const phone = parts[parts.length - 1];
-    if (!/^\d{4}$/.test(phone)) {
-      return `❌ Invalid format.\n\nUse: CHECK [Name] [Last 4 digits]\nExample: CHECK Rajesh Kumar 9823`;
-    }
-    const name = parts.slice(0, -1).join(' ').toUpperCase();
-
-    // Try live API first
-    try {
-      const res = await fetch('/api/people', { headers: { 'x-api-key': API_KEY } });
-      const data = await res.json();
-      const person = data.people?.find(p =>
-        p.name?.toLowerCase().includes(name.toLowerCase()) && p.phoneLast4 === phone
-      );
-
-      if (person) {
-        const band = getScoreBand(person.score);
-        return `━━━━━━━━━━━━━━━━━━━━━━
-🔍 THAPPA CHECK RESULT
-━━━━━━━━━━━━━━━━━━━━━━
-👤 ${person.name} | ****${person.phoneLast4}
-📍 ${person.location || 'Location not set'}
-
-🎯 Thappa Score: ${person.score}/1000
-${band.emoji} ${band.label}
-
-💡 RECOMMENDATION: ${band.recommendation}
-⚡ Risk Level: ${band.risk}
-━━━━━━━━━━━━━━━━━━━━━━`;
-      }
-    } catch (e) { /* fall through to mock */ }
-
-    // Mock response for demo
-    const mockScore = Math.floor(Math.random() * 1000);
-    const band = getScoreBand(mockScore);
-    return `━━━━━━━━━━━━━━━━━━━━━━
-🔍 THAPPA CHECK RESULT
-━━━━━━━━━━━━━━━━━━━━━━
-👤 ${name} | ****${phone}
-📍 Demo Mode
-
-🎯 Thappa Score: ${mockScore}/1000
-${band.emoji} ${band.label}
-
-💡 RECOMMENDATION: ${band.recommendation}
-⚡ Risk Level: ${band.risk}
-
-ℹ️ (Demo mode – connect API for live data)
-━━━━━━━━━━━━━━━━━━━━━━`;
-  }
-
-  if (upper.startsWith('REPORT')) {
-    const parts = text.replace(/^REPORT\s+/i, '').trim().split(/\s+/);
-    if (parts.length < 5) {
-      return `📝 THAPPA REPORT
-
-Please provide all details:
-REPORT [Name] [Last 4] [Amount] [Status] [Rating]
-
-Example:
-REPORT Rajesh Kumar 9823 500 NOT_PAID BAD
-
-Status: PAID | NOT_PAID | PARTIAL
-Rating: GOOD | BAD | NEUTRAL`;
-    }
-
-    const rating = parts[parts.length - 1].toUpperCase();
-    const status = parts[parts.length - 2].toUpperCase();
-    const amount = parts[parts.length - 3];
-    const phone = parts[parts.length - 4];
-    const name = parts.slice(0, -4).join(' ').toUpperCase();
-
-    const statusEmoji = status === 'PAID' ? '✅' : status === 'PARTIAL' ? '⚠️' : '❌';
-    const ratingEmoji = rating === 'GOOD' ? '👍' : rating === 'BAD' ? '👎' : '👌';
-
-    return `━━━━━━━━━━━━━━━━━━━━━━
-✅ THAPPA REPORT RECORDED
-━━━━━━━━━━━━━━━━━━━━━━
-👤 ${name} | ****${phone}
-💰 Amount: ₹${amount}
-📋 Status: ${status} ${statusEmoji}
-⭐ Rating: ${rating} ${ratingEmoji}
-
-📊 Score Updated (Demo)
-
-🙏 Thank you for protecting your community!
-━━━━━━━━━━━━━━━━━━━━━━`;
-  }
-
-  return `❓ I didn't understand that.
-
-Try:
-• CHECK [Name] [Last 4 digits]
-• REPORT [Name] [Last 4] [Amount] [Status] [Rating]
-• HELP`;
+  const replyNow = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  chatEl.innerHTML += `
+    <div class="message bot-message">
+      <div class="message-bubble">${escapeHtml(reply)}</div>
+      <div class="message-time">${replyNow}</div>
+    </div>`;
+  chatEl.scrollTop = chatEl.scrollHeight;
 }
 
 // ─── Add Person Modal ─────────────────────────────────────────────────────────
@@ -465,10 +475,6 @@ async function savePerson() {
   } catch (err) {
     alert('Failed to add person. Check API connection.');
   }
-}
-
-function viewPerson(id) {
-  alert(`Person ID: ${id}\n\nFull detail view coming in next version.\nUse the API: GET /api/people/${id}`);
 }
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
@@ -544,6 +550,16 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('addPersonModal').classList.add('hidden');
   });
   document.getElementById('savePersonBtn')?.addEventListener('click', savePerson);
+
+  // Person detail modal close
+  document.getElementById('closePersonDetailModal')?.addEventListener('click', () => {
+    document.getElementById('personDetailModal').classList.add('hidden');
+  });
+  document.getElementById('personDetailModal')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+      e.currentTarget.classList.add('hidden');
+    }
+  });
 
   // Simulator
   document.getElementById('simSend')?.addEventListener('click', () => {
