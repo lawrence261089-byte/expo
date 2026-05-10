@@ -113,9 +113,16 @@ async function getNextId(sheetName, prefix) {
   const rows = await readSheet(sheetName);
   const dataRows = rows.slice(1); // skip header
   if (dataRows.length === 0) return `${prefix}001`;
-  const lastId = dataRows[dataRows.length - 1][0] || `${prefix}000`;
-  const num = parseInt(lastId.replace(prefix, ''), 10) + 1;
-  return `${prefix}${String(num).padStart(3, '0')}`;
+  // Find the highest numeric ID to avoid collisions with sparse/out-of-order rows
+  let maxNum = 0;
+  for (const row of dataRows) {
+    const id = row[0] || '';
+    if (id.startsWith(prefix)) {
+      const num = parseInt(id.slice(prefix.length), 10);
+      if (!isNaN(num) && num > maxNum) maxNum = num;
+    }
+  }
+  return `${prefix}${String(maxNum + 1).padStart(3, '0')}`;
 }
 
 // ─── People Operations ────────────────────────────────────────────────────────

@@ -54,8 +54,9 @@ function formatCheckResponse(person, scoreData, recentTxns) {
   }
 
   // Build transaction breakdown
+  const paymentRateLine = totalTxn > 0 ? ` | 💸 ${paymentRate}% paid` : '';
   const txnBreakdown = totalTxn > 0
-    ? `\n📊 ${totalTxn} transactions | ${scoreData.paid} PAID ✅ | ${scoreData.defaults} NOT PAID ❌ | ${scoreData.partial} PARTIAL ⚠️`
+    ? `\n📊 ${totalTxn} transactions | ${scoreData.paid} PAID ✅ | ${scoreData.defaults} NOT PAID ❌ | ${scoreData.partial} PARTIAL ⚠️${paymentRateLine}`
     : '\n📊 No transactions recorded yet';
 
   // Build rating line

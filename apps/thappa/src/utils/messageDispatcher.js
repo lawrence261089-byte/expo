@@ -159,6 +159,10 @@ PAID [UTR number]
       }
       logger.info(`Payment claim from ${from}: UTR ${utr}`);
       // TODO: Verify UTR via payment gateway API
+      // Activate subscription for this user
+      const quota = getUserQuota(from);
+      quota.subscribed = true;
+      userQuotas.set(from, quota);
       return `✅ Payment received! (UTR: ${utr})
 
 Your account has been activated.
@@ -168,17 +172,18 @@ Reply CHECK [Name] [Last 4] to start verifying.`;
     }
 
     case 'UNKNOWN':
-    default:
-      // Check if user is in a REPORT session
-      const { executeReport: reportHandler } = require('../commands/report');
-      // Try to continue a guided report session
+    default: {
+      // Try to continue a guided REPORT session if one exists
       try {
-        const { sessions } = require('../commands/report');
-        // If no session, return unknown
-        return handleUnknown();
-      } catch {
-        return handleUnknown();
+        const { executeReport: reportHandler, hasSession } = require('../commands/report');
+        if (hasSession(from)) {
+          return await reportHandler(text, from);
+        }
+      } catch (_) {
+        // ignore – fall through to unknown
       }
+      return handleUnknown();
+    }
   }
 }
 

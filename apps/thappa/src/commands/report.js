@@ -268,4 +268,11 @@ async function executeReport(text, senderPhone) {
   }
 }
 
-module.exports = { executeReport, parseReportCommand };
+/**
+ * Check whether a guided session is active for a given phone number
+ */
+function hasSession(phone) {
+  return getSession(phone) !== null;
+}
+
+module.exports = { executeReport, parseReportCommand, hasSession };
