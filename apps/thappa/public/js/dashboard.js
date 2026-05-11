@@ -484,12 +484,12 @@ function setText(id, value) {
 }
 
 function escapeHtml(text) {
-  return text
+  return String(text)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/\*([^*]+)\*/g, '<strong>$1</strong>')
-    .replace(/\n/g, '<br/>');
+    .replace(/\*([^*]+)\*/g, '<strong>$1</strong>');
+  // Note: do NOT replace \n with <br/> — message-bubble uses white-space:pre-wrap
 }
 
 function getScoreBand(score) {

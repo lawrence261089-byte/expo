@@ -141,9 +141,10 @@ router.get('/stats', async (req, res, next) => {
     const paidTxns = txns.filter(r => r[4] === 'PAID').length;
     const defaultTxns = txns.filter(r => r[4] === 'NOT_PAID').length;
 
-    const scoreValues = scores.map(r => parseInt(r[7] || '500', 10));
-    const avgScore = scoreValues.length
-      ? Math.round(scoreValues.reduce((a, b) => a + b, 0) / scoreValues.length)
+    // Use People sheet scores (always current) rather than Scores sheet which may lag
+    const peopleScoreValues = people.map(r => parseInt(r[5] || '500', 10));
+    const avgScore = peopleScoreValues.length
+      ? Math.round(peopleScoreValues.reduce((a, b) => a + b, 0) / peopleScoreValues.length)
       : 500;
 
     const excellent = people.filter(r => parseInt(r[5] || '0', 10) >= 800).length;
