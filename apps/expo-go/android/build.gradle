@@ -40,7 +40,7 @@ plugins {
 
 // We don't need linter on turtle.
 plugins {
-  id "com.diffplug.spotless" version "6.23.3"
+  id "com.diffplug.spotless" version "6.25.0"
 }
 
 def reactProperties = new Properties()
