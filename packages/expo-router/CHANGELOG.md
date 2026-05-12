@@ -6,9 +6,26 @@
 
 ### 🎉 New features
 
+- Add a name to injected suspense boundaries for easier debugging ([#45501](https://github.com/expo/expo/pull/45501) by [@rubennorte](https://github.com/rubennorte))
+
 ### 🐛 Bug fixes
 
 ### 💡 Others
+
+## 56.1.3 — 2026-05-12
+
+_This version does not introduce any user-facing changes._
+
+## 56.1.2 — 2026-05-11
+
+### 🎉 New features
+
+- export new useCurrentRouteInfo hook ([#45566](https://github.com/expo/expo/pull/45566) by [@Ubax](https://github.com/Ubax))
+- Upgrade react-native-screens to 4.25.0 ([#45644](https://github.com/expo/expo/pull/45644) by [@Ubax](https://github.com/Ubax))
+
+### 🐛 Bug fixes
+
+- Fix drawer toggle asset path. ([#45170](https://github.com/expo/expo/pull/45170) by [@sleda](https://github.com/sleda))
 
 ## 56.1.1 — 2026-05-08
 
