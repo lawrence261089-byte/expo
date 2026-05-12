@@ -260,6 +260,13 @@ const ScreensList: ScreenConfig[] = [
   },
   {
     getComponent() {
+      return optionalRequire(() => require('../screens/LunchScreen'));
+    },
+    name: 'Lunch',
+    options: { title: 'Lunch Icons' },
+  },
+  {
+    getComponent() {
       return optionalRequire(() => require('../screens/WebViewScreen'));
     },
     name: 'WebView',

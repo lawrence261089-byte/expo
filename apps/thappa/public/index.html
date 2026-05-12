@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thappa – Admin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/dashboard.css" />
+</head>
+<body>
+  <!-- ── Sidebar ─────────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">थ</div>
+      <div class="brand-text">
+        <span class="brand-name">Thappa</span>
+        <span class="brand-tagline">Trust Platform</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-page="dashboard">
+        <span class="nav-icon">◈</span>
+        <span>Dashboard</span>
+      </a>
+      <a href="#" class="nav-item" data-page="people">
+        <span class="nav-icon">◉</span>
+        <span>People</span>
+      </a>
+      <a href="#" class="nav-item" data-page="transactions">
+        <span class="nav-icon">◎</span>
+        <span>Transactions</span>
+      </a>
+      <a href="#" class="nav-item" data-page="scores">
+        <span class="nav-icon">◐</span>
+        <span>Scores</span>
+      </a>
+      <a href="#" class="nav-item" data-page="simulator">
+        <span class="nav-icon">◑</span>
+        <span>Bot Simulator</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="status-dot online"></div>
+      <span>System Online</span>
+    </div>
+  </aside>
+
+  <!-- ── Main Content ────────────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- ── Header ──────────────────────────────────────────── -->
+    <header class="top-header">
+      <div class="header-left">
+        <h1 class="page-title" id="pageTitle">Dashboard</h1>
+        <span class="page-subtitle" id="pageSubtitle">Overview of Thappa platform activity</span>
+      </div>
+      <div class="header-right">
+        <button class="btn btn-primary" id="refreshBtn">↻ Refresh</button>
+        <div class="header-time" id="headerTime"></div>
+      </div>
+    </header>
+
+    <!-- ── Pages ───────────────────────────────────────────── -->
+
+    <!-- Dashboard Page -->
+    <div class="page active" id="page-dashboard">
+      <!-- Stats Cards -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon people-icon">◉</div>
+          <div class="stat-body">
+            <div class="stat-value" id="stat-people">—</div>
+            <div class="stat-label">Total People</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon txn-icon">◎</div>
+          <div class="stat-body">
+            <div class="stat-value" id="stat-txns">—</div>
+            <div class="stat-label">Transactions</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon score-icon">◐</div>
+          <div class="stat-body">
+            <div class="stat-value" id="stat-avg-score">—</div>
+            <div class="stat-label">Avg Score</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon rate-icon">◑</div>
+          <div class="stat-body">
+            <div class="stat-value" id="stat-payment-rate">—</div>
+            <div class="stat-label">Payment Rate</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Score Distribution -->
+      <div class="cards-row">
+        <div class="card">
+          <div class="card-header">
+            <h3>Score Distribution</h3>
+          </div>
+          <div class="card-body">
+            <div class="distribution-bars" id="distributionBars">
+              <div class="dist-item">
+                <div class="dist-label">
+                  <span class="dist-badge excellent">🌟 Excellent</span>
+                  <span class="dist-count" id="dist-excellent">0</span>
+                </div>
+                <div class="dist-bar-track">
+                  <div class="dist-bar excellent-bar" id="bar-excellent" style="width:0%"></div>
+                </div>
+              </div>
+              <div class="dist-item">
+                <div class="dist-label">
+                  <span class="dist-badge good">✅ Good</span>
+                  <span class="dist-count" id="dist-good">0</span>
+                </div>
+                <div class="dist-bar-track">
+                  <div class="dist-bar good-bar" id="bar-good" style="width:0%"></div>
+                </div>
+              </div>
+              <div class="dist-item">
+                <div class="dist-label">
+                  <span class="dist-badge moderate">⚡ Moderate</span>
+                  <span class="dist-count" id="dist-moderate">0</span>
+                </div>
+                <div class="dist-bar-track">
+                  <div class="dist-bar moderate-bar" id="bar-moderate" style="width:0%"></div>
+                </div>
+              </div>
+              <div class="dist-item">
+                <div class="dist-label">
+                  <span class="dist-badge risky">⚠️ Risky</span>
+                  <span class="dist-count" id="dist-risky">0</span>
+                </div>
+                <div class="dist-bar-track">
+                  <div class="dist-bar risky-bar" id="bar-risky" style="width:0%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>Quick Check</h3>
+          </div>
+          <div class="card-body">
+            <div class="quick-check-form">
+              <input type="text" id="qcName" placeholder="Full Name" class="form-input" />
+              <input type="text" id="qcPhone" placeholder="Last 4 digits" maxlength="4" class="form-input" />
+              <button class="btn btn-primary full-width" id="qcBtn">Check Score</button>
+            </div>
+            <div id="qcResult" class="qc-result hidden"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- People Page -->
+    <div class="page" id="page-people">
+      <div class="card">
+        <div class="card-header">
+          <h3>People Directory</h3>
+          <div class="card-actions">
+            <input type="text" id="peopleSearch" placeholder="Search name or ID..." class="form-input search-input" />
+            <button class="btn btn-primary" id="addPersonBtn">+ Add Person</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="table-wrapper">
+            <table class="data-table" id="peopleTable">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Phone</th>
+                  <th>Location</th>
+                  <th>Type</th>
+                  <th>Score</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="peopleTableBody">
+                <tr><td colspan="8" class="loading-cell">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transactions Page -->
+    <div class="page" id="page-transactions">
+      <div class="card">
+        <div class="card-header">
+          <h3>Transaction Log</h3>
+          <div class="card-actions">
+            <select id="txnFilter" class="form-input">
+              <option value="">All Statuses</option>
+              <option value="PAID">PAID</option>
+              <option value="NOT_PAID">NOT PAID</option>
+              <option value="PARTIAL">PARTIAL</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="table-wrapper">
+            <table class="data-table" id="txnTable">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Person ID</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Rating</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody id="txnTableBody">
+                <tr><td colspan="6" class="loading-cell">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scores Page -->
+    <div class="page" id="page-scores">
+      <div class="card">
+        <div class="card-header">
+          <h3>Score Records</h3>
+        </div>
+        <div class="card-body">
+          <div class="table-wrapper">
+            <table class="data-table" id="scoresTable">
+              <thead>
+                <tr>
+                  <th>Person ID</th>
+                  <th>Total Txn</th>
+                  <th>Paid</th>
+                  <th>Defaults</th>
+                  <th>Partial</th>
+                  <th>Good</th>
+                  <th>Bad</th>
+                  <th>Score</th>
+                  <th>Last Updated</th>
+                </tr>
+              </thead>
+              <tbody id="scoresTableBody">
+                <tr><td colspan="9" class="loading-cell">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bot Simulator Page -->
+    <div class="page" id="page-simulator">
+      <div class="card simulator-card">
+        <div class="card-header">
+          <h3>WhatsApp Bot Simulator</h3>
+          <span class="simulator-badge">Test Mode</span>
+        </div>
+        <div class="card-body simulator-body">
+          <div class="phone-frame">
+            <div class="phone-header">
+              <div class="phone-avatar">थ</div>
+              <div class="phone-info">
+                <div class="phone-name">Thappa</div>
+                <div class="phone-status">online</div>
+              </div>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+              <div class="message bot-message">
+                <div class="message-bubble">
+                  🙏 <strong>Namaste!</strong> Welcome to Thappa.<br/><br/>
+                  Try these commands:<br/>
+                  • CHECK Rajesh Kumar 9823<br/>
+                  • REPORT Rani Devi 9876 500 PAID GOOD<br/>
+                  • HELP
+                </div>
+                <div class="message-time">now</div>
+              </div>
+            </div>
+            <div class="chat-input-area">
+              <input type="text" id="simInput" placeholder="Type a command..." class="chat-input" />
+              <button class="send-btn" id="simSend">➤</button>
+            </div>
+          </div>
+
+          <div class="sim-commands">
+            <h4>Quick Commands</h4>
+            <div class="cmd-chips">
+              <button class="cmd-chip" data-cmd="CHECK Rajesh Kumar 9823">CHECK example</button>
+              <button class="cmd-chip" data-cmd="REPORT Rani Devi 9876 200 PAID GOOD">REPORT example</button>
+              <button class="cmd-chip" data-cmd="HELP">HELP menu</button>
+              <button class="cmd-chip" data-cmd="Hi">Greeting</button>
+            </div>
+
+            <h4 style="margin-top:1.5rem">Score Guide</h4>
+            <div class="score-guide">
+              <div class="sg-item excellent">🌟 800–1000 EXCELLENT</div>
+              <div class="sg-item good">✅ 600–799 GOOD</div>
+              <div class="sg-item moderate">⚡ 300–599 MODERATE</div>
+              <div class="sg-item risky">⚠️ 0–299 RISKY</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── Add Person Modal ────────────────────────────────────── -->
+  <div class="modal-overlay hidden" id="addPersonModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Add New Person</h3>
+        <button class="modal-close" id="closeModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" id="newName" class="form-input" placeholder="e.g. Rajesh Kumar" />
+        </div>
+        <div class="form-group">
+          <label>Phone Last 4 Digits *</label>
+          <input type="text" id="newPhone" class="form-input" placeholder="e.g. 9823" maxlength="4" />
+        </div>
+        <div class="form-group">
+          <label>Location</label>
+          <input type="text" id="newLocation" class="form-input" placeholder="e.g. Koramangala, Bangalore" />
+        </div>
+        <div class="form-group">
+          <label>User Type</label>
+          <select id="newUserType" class="form-input">
+            <option value="Worker">Worker</option>
+            <option value="Shopkeeper">Shopkeeper</option>
+            <option value="Employer">Employer</option>
+          </select>
+        </div>
+        <button class="btn btn-primary full-width" id="savePersonBtn">Save Person</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>
